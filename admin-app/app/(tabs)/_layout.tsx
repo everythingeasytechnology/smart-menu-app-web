@@ -11,6 +11,12 @@ import { RootState } from '../../src/redux/store';
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const user = useSelector((state: RootState) => state.auth.user);
+  const token = useSelector((state: RootState) => state.auth.token);
+
+  if (!user || !token) {
+    return <Redirect href="/login" />;
+  }
+
   const isWaiter = user?.role === 'waiter';
 
   const role = user?.role?.toLowerCase() || '';

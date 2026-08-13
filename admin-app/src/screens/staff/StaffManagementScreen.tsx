@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Switch, Alert } from 'react-native';
 import { Plus, Users, X, Edit2, Trash2, ChevronLeft, ChevronDown, Eye, EyeOff, Search, User, Briefcase, CheckCircle2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -53,6 +53,7 @@ export default function StaffManagementScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('waiter');
   const [roleModalVisible, setRoleModalVisible] = useState(false);
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
 
   const fetchStaff = async (showLoader = false) => {
     if (showLoader) setIsLoading(true);
@@ -97,6 +98,35 @@ export default function StaffManagementScreen() {
     setPassword('');
     setRole('waiter');
     setModalVisible(true);
+  };
+
+  const toggleStatus = async (staffId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    setUpdatingStatusId(staffId);
+    try {
+      const response = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/staff/${staffId}/status`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setStaffList(prev => prev.map(staff => 
+          staff.id === staffId ? { ...staff, status: newStatus } : staff
+        ));
+      } else {
+        Alert.alert("Error", data.message || "Failed to update status");
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      Alert.alert("Error", "Something went wrong.");
+    } finally {
+      setUpdatingStatusId(null);
+    }
   };
 
   const openEditModal = (staff: Staff) => {
@@ -215,9 +245,19 @@ export default function StaffManagementScreen() {
           <TouchableOpacity onPress={() => openEditModal(item)} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center' }}>
             <Edit2 size={18} color="#6B7280" />
           </TouchableOpacity>
-          <TouchableOpacity style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
-            <Trash2 size={18} color="#EF4444" />
-          </TouchableOpacity>
+          {updatingStatusId === item.id ? (
+            <View style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="small" color="#F97316" />
+            </View>
+          ) : (
+            <Switch
+              trackColor={{ false: '#E5E7EB', true: '#F97316' }}
+              thumbColor={'#ffffff'}
+              onValueChange={() => toggleStatus(item.id, item.status || 'active')}
+              value={!isInactive}
+              style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+            />
+          )}
         </View>
       </View>
     );

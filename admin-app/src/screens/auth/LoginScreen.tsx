@@ -12,8 +12,8 @@ import { dataCenter } from '../../data/data';
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('b@gmail.com');
+  const [password, setPassword] = useState('12345678');
   const [showPassword, setShowPassword] = useState(false);
   const [activeInput, setActiveInput] = useState<'email' | 'password' | null>(null);
   const [isLoading, setIsLoading] = useState(false);

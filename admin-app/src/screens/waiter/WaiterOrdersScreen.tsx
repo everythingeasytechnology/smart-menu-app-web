@@ -6,8 +6,11 @@ import { Clock, ChefHat, Utensils, MoreVertical, ArrowRight, Filter, ChevronDown
 import { useExpoPushToken } from '../../hooks/usePushNotifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../redux/store';
+import { logout } from '../../redux/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dataCenter } from '../../data/data';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +22,7 @@ const TABS = [
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('pending');
   const insets = useSafeAreaInsets();
   
@@ -28,6 +32,42 @@ export default function OrdersScreen() {
   const token = useSelector((state: RootState) => state.auth.token);
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const checkStatus = async () => {
+        if (!token) return;
+        try {
+          const res = await fetch(`${dataCenter.apiUrl}/token-status`, {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({ token })
+          });
+          const data = await res.json();
+          console.log(data);
+          
+          if (data.success && data.data.status === 'inactive' && isActive) {
+            dispatch(logout());
+            await AsyncStorage.clear();
+            router.replace('/login');
+          }
+        } catch (error) {
+          console.error('Failed to check token status:', error);
+        }
+      };
+      checkStatus();
+      const intervalId = setInterval(checkStatus, 3000);
+      
+      return () => { 
+        isActive = false; 
+        clearInterval(intervalId);
+      };
+    }, [token])
+  );
 
   const fetchOrders = useCallback(async (showLoader = false) => {
     if (showLoader) setIsLoading(true);
