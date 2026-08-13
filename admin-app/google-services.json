@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "139935636658",
+    "project_id": "smart-menu-4ee79",
+    "storage_bucket": "smart-menu-4ee79.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:139935636658:android:be611e8facd4854f8d3dab",
+        "android_client_info": {
+          "package_name": "com.everythingeasy.smartmenu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQmhaI53vfV96oYcOSk9iWUOaeMwvsRo0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -23,6 +23,7 @@
       },
       "edgeToEdgeEnabled": false,
       "allowBackup": false,
+      "googleServicesFile": "./google-services.json",
       "package": "com.everythingeasy.smartmenu",
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
