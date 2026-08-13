@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "139935636658",
-    "project_id": "smart-menu-4ee79",
-    "storage_bucket": "smart-menu-4ee79.firebasestorage.app"
+    "project_number": "36736474831",
+    "project_id": "digitalmenu-a7a43",
+    "storage_bucket": "digitalmenu-a7a43.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:139935636658:android:be611e8facd4854f8d3dab",
+        "mobilesdk_app_id": "1:36736474831:android:b1b0093b803ad4f991a1ba",
         "android_client_info": {
           "package_name": "com.everythingeasy.smartmenu"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAQmhaI53vfV96oYcOSk9iWUOaeMwvsRo0"
+          "current_key": "AIzaSyANf_-eNdSUR8gGrowt17HV6IIWEQkVTOY"
         }
       ],
       "services": {

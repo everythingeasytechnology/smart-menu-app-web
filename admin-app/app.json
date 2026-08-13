@@ -27,7 +27,13 @@
       "package": "com.everythingeasy.smartmenu",
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET",
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "com.google.android.c2dm.permission.RECEIVE",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -45,6 +51,14 @@
         {
           "photosPermission": "Allow access to your photos to upload post images.",
           "cameraPermission": "Allow camera access to take photos for posts."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ff6b35",
+          "defaultChannel": "default"
         }
       ]
     ],
