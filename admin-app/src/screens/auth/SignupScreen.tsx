@@ -34,6 +34,76 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Availability Checks
+  const [phoneStatus, setPhoneStatus] = useState<'idle' | 'checking' | 'available' | 'exists'>('idle');
+  const [phoneMessage, setPhoneMessage] = useState('');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'exists'>('idle');
+  const [emailMessage, setEmailMessage] = useState('');
+
+  React.useEffect(() => {
+    if (mobile.length === 10) {
+      checkPhone(mobile);
+    } else {
+      setPhoneStatus('idle');
+      setPhoneMessage('');
+    }
+  }, [mobile]);
+
+  const checkPhone = async (phone: string) => {
+    setPhoneStatus('checking');
+    try {
+      const res = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/auth/check-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (data.data?.available) {
+        setPhoneStatus('available');
+        setPhoneMessage(data.message || 'Phone number is available');
+      } else {
+        setPhoneStatus('exists');
+        setPhoneMessage(data.message || 'Phone number already exists');
+      }
+    } catch (e) {
+      setPhoneStatus('idle');
+    }
+  };
+
+  React.useEffect(() => {
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (isValidEmail) {
+      const timeoutId = setTimeout(() => {
+        checkEmail(email);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setEmailStatus('idle');
+      setEmailMessage('');
+    }
+  }, [email]);
+
+  const checkEmail = async (emailToCheck: string) => {
+    setEmailStatus('checking');
+    try {
+      const res = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/auth/check-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email: emailToCheck })
+      });
+      const data = await res.json();
+      if (data.data?.available) {
+        setEmailStatus('available');
+        setEmailMessage(data.message || 'Email is available');
+      } else {
+        setEmailStatus('exists');
+        setEmailMessage(data.message || 'Email already exists');
+      }
+    } catch (e) {
+      setEmailStatus('idle');
+    }
+  };
+
   const handleNext = () => {
     if (step < 6) setStep(step + 1);
   };
@@ -103,8 +173,8 @@ export default function SignupScreen() {
   const isStepValid = () => {
     if (step === 1) return industry !== null;
     if (step === 2) return name.trim().length > 2;
-    if (step === 3) return mobile.length >= 10;
-    if (step === 4) return email.includes('@') && email.length > 5;
+    if (step === 3) return mobile.length === 10 && phoneStatus === 'available';
+    if (step === 4) return emailStatus === 'available';
     if (step === 5) return password.length >= 8 && password === confirmPassword;
     if (step === 6) return otp.length >= 4;
     return false;
@@ -237,6 +307,18 @@ export default function SignupScreen() {
                   />
                 </View>
               </View>
+              {phoneStatus === 'checking' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 16 }}>
+                  <ActivityIndicator size="small" color="#6B7280" />
+                  <Text style={{ marginLeft: 8, color: '#6B7280', fontSize: 13 }}>Checking availability...</Text>
+                </View>
+              )}
+              {phoneStatus === 'available' && (
+                <Text style={{ marginLeft: 16, color: '#10B981', fontSize: 13, fontWeight: '500' }}>{phoneMessage}</Text>
+              )}
+              {phoneStatus === 'exists' && (
+                <Text style={{ marginLeft: 16, color: '#EF4444', fontSize: 13, fontWeight: '500' }}>{phoneMessage}</Text>
+              )}
             </View>
           )}
 
@@ -276,6 +358,18 @@ export default function SignupScreen() {
                   />
                 </View>
               </View>
+              {emailStatus === 'checking' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 16 }}>
+                  <ActivityIndicator size="small" color="#6B7280" />
+                  <Text style={{ marginLeft: 8, color: '#6B7280', fontSize: 13 }}>Checking availability...</Text>
+                </View>
+              )}
+              {emailStatus === 'available' && (
+                <Text style={{ marginLeft: 16, color: '#10B981', fontSize: 13, fontWeight: '500' }}>{emailMessage}</Text>
+              )}
+              {emailStatus === 'exists' && (
+                <Text style={{ marginLeft: 16, color: '#EF4444', fontSize: 13, fontWeight: '500' }}>{emailMessage}</Text>
+              )}
             </View>
           )}
 
