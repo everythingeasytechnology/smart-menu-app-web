@@ -59,7 +59,8 @@ console.log(data, 'login data');
         }));
 
         // Navigate to Home/Orders based on role
-        if (data.data.user.role === 'waiter') {
+        const role = data.data.user.role?.toLowerCase() || '';
+        if (['waiter', 'manager', 'cashier', 'kitchen_staff'].includes(role)) {
           router.replace('/(waiter)/orders');
         } else {
           router.replace('/(tabs)/orders');

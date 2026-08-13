@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EverythingEasy Blogs",
-    "slug": "everything-easy-blogs",
+    "slug": "everythingeasy-smartmenu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -53,7 +53,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b780cddb-134d-4877-b629-8b01a7db31a4"
+        "projectId": "4fe49471-5741-4b67-9553-7ef6c3d554e3"
       }
     }
   }

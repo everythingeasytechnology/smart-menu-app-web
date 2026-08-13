@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, SafeAreaView, Platform, ActivityIndicator, Modal, KeyboardAvoidingView } from 'react-native';
-import { Search, Plus, X, UtensilsCrossed, Leaf, Beef, Utensils, ChevronRight, BookOpen } from 'lucide-react-native';
+import { Search, Plus, X, UtensilsCrossed, Leaf, Beef, Utensils, ChevronRight, BookOpen, CheckCircle2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { theme } from '../../../constants/theme';
@@ -45,6 +45,25 @@ export default function MenuScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
+
+  const handleAddItem = () => {
+    if (categories.length === 0) {
+      showAlert('Category Required', 'Please add at least one category before adding menu items. Click on "View All" to add one.');
+    } else {
+      router.push('/menu/add');
+    }
+  };
+
   const handleEditClick = (item: MenuItem) => {
     router.push({
       pathname: '/menu/add',
@@ -68,6 +87,8 @@ export default function MenuScreen() {
           ]);
           
           const itemsData = await itemsRes.json();
+          console.log(itemsData);
+          
           const catsData = await catsRes.json();
 
           if (isActive) {
@@ -288,7 +309,7 @@ export default function MenuScreen() {
 
       {/* Floating Add Button (Bottom Right) */}
       <TouchableOpacity 
-        onPress={() => router.push('/menu/add')}
+        onPress={handleAddItem}
        style={{ 
                         position: 'absolute', 
                         bottom: '2%',
@@ -304,6 +325,32 @@ export default function MenuScreen() {
         <Plus size={32} color="#FFFFFF" />
       </TouchableOpacity>
 
+      {/* Custom Alert Modal */}
+      <Modal transparent visible={alertVisible} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.colors.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              {alertTitle.toLowerCase().includes('error') || alertTitle.toLowerCase().includes('failed') || alertTitle.toLowerCase().includes('required') ? (
+                <X size={32} color={theme.colors.primary} strokeWidth={2.5} />
+              ) : (
+                <CheckCircle2 size={32} color={theme.colors.primary} strokeWidth={2.5} />
+              )}
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
+              {alertTitle}
+            </Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+              {alertMessage}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setAlertVisible(false)}
+              style={{ width: '100%', height: 50, backgroundColor: theme.colors.primary, borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );

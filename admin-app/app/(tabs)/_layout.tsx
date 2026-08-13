@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { BarChart3, PieChart, Utensils, User } from 'lucide-react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,6 +12,11 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const user = useSelector((state: RootState) => state.auth.user);
   const isWaiter = user?.role === 'waiter';
+
+  const role = user?.role?.toLowerCase() || '';
+  if (['waiter', 'manager', 'cashier', 'kitchen_staff'].includes(role)) {
+    return <Redirect href="/(waiter)/orders" />;
+  }
   
   return (
     <Tabs

@@ -118,7 +118,8 @@ export default function AddMenuItemScreen() {
 
       const validVariants = variants.filter(v => v.label.trim() !== '' && v.price.trim() !== '');
       validVariants.forEach((v, index) => {
-        formData.append(`variants[${index}][label]`, v.label.trim());
+        const formattedLabel = v.label.trim().replace(/\b\w/g, char => char.toUpperCase());
+        formData.append(`variants[${index}][label]`, formattedLabel);
         formData.append(`variants[${index}][price]`, v.price.trim());
       });
 
@@ -128,8 +129,8 @@ export default function AddMenuItemScreen() {
         const mimeType = match ? `image/${match[1]}` : `image/jpeg`;
         formData.append('image', { uri: imageUri, name: filename, type: mimeType } as any);
       }
-
       let apiUrl = `${dataCenter.apiUrl.replace('/auth', '')}/menu-items`;
+      
       if (editData) {
         try {
           const item = JSON.parse(editData);
@@ -149,12 +150,11 @@ export default function AddMenuItemScreen() {
       
       const data = await response.json();
       console.log(data);
-      
       if (data.success || response.ok) {
-        Alert.alert('Success', 'Menu item added successfully!');
+        Alert.alert('Success', `Menu item ${editData ? 'updated' : 'added'} successfully!`);
         router.back();
       } else {
-        Alert.alert('Error', data.message || 'Failed to add menu item');
+        Alert.alert('Error', data.message || `Failed to ${editData ? 'update' : 'add'} menu item`);
       }
     } catch (error) {
       console.error(error);
@@ -342,6 +342,7 @@ export default function AddMenuItemScreen() {
                   placeholderTextColor="#9CA3AF"
                   value={variant.label}
                   onChangeText={(val) => updateVariant(variant.id, 'label', val)}
+                  autoCapitalize="words"
                 />
               </View>
               <View className="flex-[0.6]">

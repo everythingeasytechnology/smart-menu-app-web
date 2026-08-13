@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform, Dimen
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
 import { theme } from '../../../constants/theme';
 import { Clock, ChefHat, Utensils, MoreVertical, ArrowRight, Filter, ChevronDown, CupSoda, Wallet, ClipboardList, PieChart, CheckCircle2 } from 'lucide-react-native';
+import { useExpoPushToken } from '../../hooks/usePushNotifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
@@ -20,6 +21,9 @@ export default function OrdersScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('pending');
   const insets = useSafeAreaInsets();
+  
+  // Initialize Push Notifications
+  useExpoPushToken();
   
   const token = useSelector((state: RootState) => state.auth.token);
   const [orders, setOrders] = useState<any[]>([]);

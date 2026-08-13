@@ -30,7 +30,8 @@ function InitialLayout() {
           
           // Auto redirect to home if currently at root or inside auth
           if (segments[0] === '(auth)' || !segments[0]) {
-            if (session.user.role === 'waiter') {
+            const role = session.user.role?.toLowerCase() || '';
+            if (['waiter', 'manager', 'cashier', 'kitchen_staff'].includes(role)) {
               router.replace('/(waiter)/orders');
             } else {
               router.replace('/(tabs)/orders');

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Platform, Modal } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
-import { Store, Users, BarChart3, Star, Settings, ChevronRight, Edit2, ShieldCheck, FileText, IndianRupee, Calendar, LogOut, User } from 'lucide-react-native';
+import { useRouter, Stack, useFocusEffect } from 'expo-router';
+import { Store, Users, BarChart3, Star, Settings, ChevronRight, Edit2, ShieldCheck, FileText, IndianRupee, Calendar, LogOut, User as UserIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch, useSelector } from 'react-redux';
@@ -14,7 +14,32 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
+  const token = useSelector((state: RootState) => state.auth.token);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchProfile = async () => {
+        if (!token) return;
+        try {
+          const res = await fetch('https://smartmenu.everythingeasy.in/api/v1/business-owner/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const json = await res.json();
+          if (json.success) {
+            setProfileData(json.data);
+          }
+        } catch (e) {
+          console.error('Failed to fetch profile', e);
+        }
+      };
+      
+      fetchProfile();
+    }, [token])
+  );
 
   const handleLogout = async () => {
     try {
@@ -28,14 +53,7 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { 
-      id: 1, 
-      title: 'Restaurant Profile', 
-      subtitle: 'View and update your restaurant details',
-      icon: Store, 
-      bg: '#EEF2FF', 
-      color: '#4F46E5' 
-    },
+
     { 
       id: 2, 
       title: 'Staff Management', 
@@ -69,7 +87,7 @@ export default function ProfileScreen() {
             <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>Manage account and settings</Text>
           </View>
           <TouchableOpacity style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, alignItems: 'center', justifyContent: 'center' }}>
-            <User size={22} color="#EA580C" />
+            <UserIcon size={22} color="#EA580C" />
           </TouchableOpacity>
         </View>
       </View>
@@ -96,23 +114,27 @@ export default function ProfileScreen() {
           marginBottom: 24
         }}>
           <View style={{ marginRight: 16 }}>
-            <View style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: '#E5E7EB', overflow: 'hidden' }}>
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop' }} 
-                style={{ width: '100%', height: '100%' }} 
-              />
+            <View style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: '#E5E7EB', overflow: 'hidden', backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+              {profileData?.profile_image_url ? (
+                <Image 
+                  source={{ uri: profileData.profile_image_url }} 
+                  style={{ width: '100%', height: '100%' }} 
+                />
+              ) : (
+                <UserIcon size={40} color="#9CA3AF" />
+              )}
             </View>
 
           </View>
           
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 4 }}>{user?.name || 'User Name'}</Text>
-            <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 2 }}>{user?.phone || 'No phone provided'}</Text>
-            <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 8 }}>{user?.email || 'No email provided'}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 4 }}>{profileData?.name || user?.name || 'User Name'}</Text>
+            <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 2 }}>{profileData?.phone || user?.phone || 'No phone provided'}</Text>
+            <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 8 }}>{profileData?.email || user?.email || 'No email provided'}</Text>
             
             <View style={{ alignSelf: 'flex-start', backgroundColor: '#FFF7ED', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}>
               <ShieldCheck size={14} color="#EA580C" style={{ marginRight: 4 }} />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#EA580C', textTransform: 'capitalize' }}>{user?.role || 'Verified Account'}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#EA580C', textTransform: 'capitalize' }}>{profileData?.role || user?.role || 'Verified Account'}</Text>
             </View>
           </View>
         </View>

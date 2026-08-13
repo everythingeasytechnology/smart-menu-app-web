@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Animated, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Hotel, Coffee, UtensilsCrossed, Croissant, Cloud, User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react-native';
+import { ChevronLeft, Hotel, Coffee, UtensilsCrossed, Croissant, Cloud, User, Mail, Lock, Eye, EyeOff, Phone, X, CheckCircle2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../../redux/authSlice';
 import { dataCenter } from '../../data/data';
 
 const INDUSTRIES = [
@@ -18,6 +20,7 @@ const INDUSTRIES = [
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
   
   // Wizard State
   const [step, setStep] = useState(1);
@@ -33,6 +36,19 @@ export default function SignupScreen() {
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [expectedOtp, setExpectedOtp] = useState<string | null>(null);
+  const [otpTimer, setOtpTimer] = useState(60);
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
 
   // Availability Checks
   const [phoneStatus, setPhoneStatus] = useState<'idle' | 'checking' | 'available' | 'exists'>('idle');
@@ -104,8 +120,66 @@ export default function SignupScreen() {
     }
   };
 
-  const handleNext = () => {
-    if (step < 6) setStep(step + 1);
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (step === 6 && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, otpTimer]);
+
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/auth/email-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.success && data.data?.otp) {
+        setExpectedOtp(data.data.otp);
+        setOtpTimer(60);
+        showAlert('Success', 'A new OTP has been sent to your email.');
+      } else {
+        showAlert('Error', data.message || 'Failed to resend OTP');
+      }
+    } catch (e) {
+      showAlert('Error', 'An error occurred while resending OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (step === 5) {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/auth/email-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        console.log(data);
+        
+        if (data.success && data.data?.otp) {
+          setExpectedOtp(data.data.otp);
+          setOtpTimer(60);
+          setStep(6);
+        } else {
+          showAlert('Error', data.message || 'Failed to send OTP');
+        }
+      } catch (e) {
+        showAlert('Error', 'An error occurred while sending OTP');
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (step < 6) {
+      setStep(step + 1);
+    }
   };
 
   const handleBack = () => {
@@ -119,8 +193,8 @@ export default function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (otp !== '0000') {
-      alert("Invalid OTP. Please enter 0000");
+    if (otp !== expectedOtp) {
+      showAlert('Error', "Invalid OTP. Please enter the correct code sent to your email.");
       return;
     }
 
@@ -147,24 +221,31 @@ export default function SignupScreen() {
       const data = await response.json();
 
       if (data.success) {
-        await AsyncStorage.setItem('@auth_session', JSON.stringify({
-          token: data.data.access_token,
+        dispatch(setCredentials({
           user: data.data.user,
-          business: data.data.business
+          business: data.data.business,
+          token: data.data.access_token
         }));
-        router.replace('/(tabs)');
+
+        await AsyncStorage.setItem('@auth_session', JSON.stringify({
+          user: data.data.user,
+          business: data.data.business,
+          token: data.data.access_token
+        }));
+
+        router.replace('/(tabs)/orders');
       } else {
         if (data.errors) {
           const firstErrorKey = Object.keys(data.errors)[0];
           const firstErrorMsg = data.errors[firstErrorKey][0];
-          alert(firstErrorMsg);
+          showAlert('Registration Failed', firstErrorMsg);
         } else {
-          alert(data.message || 'Registration failed');
+          showAlert('Registration Failed', data.message || 'Registration failed');
         }
       }
     } catch (error) {
       console.error(error);
-      alert('An error occurred during registration');
+      showAlert('Error', 'An error occurred during registration');
     } finally {
       setIsLoading(false);
     }
@@ -299,8 +380,9 @@ export default function SignupScreen() {
                     placeholder="Enter mobile number"
                     placeholderTextColor="#9CA3AF"
                     keyboardType="phone-pad"
+                    maxLength={10}
                     value={mobile}
-                    onChangeText={setMobile}
+                    onChangeText={(val) => setMobile(val.replace(/[^0-9]/g, ''))}
                     onFocus={() => setActiveInput('mobile')}
                     onBlur={() => setActiveInput(null)}
                     autoFocus
@@ -446,9 +528,15 @@ export default function SignupScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={{ fontSize: 13, color: password.length > 0 && password.length < 8 ? '#EF4444' : '#6B7280', marginTop: -16, marginBottom: 32, marginLeft: 16 }}>
+              <Text style={{ fontSize: 13, color: password.length > 0 && password.length < 8 ? '#EF4444' : '#6B7280', marginTop: -16, marginBottom: 8, marginLeft: 16 }}>
                 * Password must be at least 8 characters long.
               </Text>
+              
+              {confirmPassword.length > 0 && password !== confirmPassword && (
+                <Text style={{ fontSize: 13, color: '#EF4444', marginBottom: 32, marginLeft: 16 }}>
+                  * Passwords do not match.
+                </Text>
+              )}
             </View>
           )}
 
@@ -490,6 +578,20 @@ export default function SignupScreen() {
                   maxLength={4}
                 />
               </View>
+
+              <View style={{ alignItems: 'center' }}>
+                {otpTimer > 0 ? (
+                  <Text style={{ fontSize: 14, color: '#6B7280', fontWeight: '500' }}>
+                    Resend code in <Text style={{ color: theme.colors.accent, fontWeight: '700' }}>{otpTimer}s</Text>
+                  </Text>
+                ) : (
+                  <TouchableOpacity onPress={handleResendOtp} disabled={isLoading}>
+                    <Text style={{ fontSize: 15, color: theme.colors.accent, fontWeight: '700' }}>
+                      Resend OTP
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           )}
 
@@ -517,6 +619,34 @@ export default function SignupScreen() {
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Custom Alert Modal */}
+      <Modal transparent visible={alertVisible} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.colors.accent + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              {alertTitle.toLowerCase().includes('error') || alertTitle.toLowerCase().includes('failed') ? (
+                <X size={32} color={theme.colors.accent} strokeWidth={2.5} />
+              ) : (
+                <CheckCircle2 size={32} color={theme.colors.accent} strokeWidth={2.5} />
+              )}
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
+              {alertTitle}
+            </Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+              {alertMessage}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setAlertVisible(false)}
+              style={{ width: '100%', height: 50, backgroundColor: theme.colors.accent, borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }

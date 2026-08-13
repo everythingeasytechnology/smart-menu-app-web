@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
-import { Plus, LayoutList, X, ChevronLeft, Search } from 'lucide-react-native';
+import { Plus, LayoutList, X, ChevronLeft, Search, CheckCircle2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { theme } from '../../../constants/theme';
@@ -35,6 +35,18 @@ export default function CategoriesScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sortOrder, setSortOrder] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
 
   const fetchCategories = async (showLoader = false) => {
     if (showLoader) setIsLoading(true);
@@ -68,22 +80,36 @@ export default function CategoriesScreen() {
   }, [categoriesList, searchQuery]);
 
   const openAddModal = () => {
+    setEditingCategory(null);
     setName('');
     setDescription('');
     setSortOrder('');
     setModalVisible(true);
   };
 
+  const openEditModal = (category: Category) => {
+    setEditingCategory(category);
+    setName(category.name);
+    setDescription(category.description || '');
+    setSortOrder(category.sort_order ? category.sort_order.toString() : '');
+    setModalVisible(true);
+  };
+
   const handleSubmit = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Category name is required');
+      showAlert('Error', 'Category name is required');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/categories`, {
-        method: 'POST',
+      const isEdit = editingCategory !== null;
+      const url = isEdit 
+        ? `${dataCenter.apiUrl.replace('/auth', '')}/categories/${editingCategory.id}`
+        : `${dataCenter.apiUrl.replace('/auth', '')}/categories`;
+
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -101,14 +127,15 @@ export default function CategoriesScreen() {
       
       if (data.success || response.ok) {
         setModalVisible(false);
+        setEditingCategory(null);
         fetchCategories(false);
-        Alert.alert('Success', 'Category added successfully!');
+        showAlert('Success', `Category ${isEdit ? 'updated' : 'added'} successfully!`);
       } else {
-        Alert.alert('Error', data.message || 'Failed to add category');
+        showAlert('Error', data.message || `Failed to ${isEdit ? 'update' : 'add'} category`);
       }
     } catch (error) {
       console.error('Add category error:', error);
-      Alert.alert('Error', 'An unexpected error occurred while adding category.');
+      showAlert('Error', 'An unexpected error occurred while adding category.');
     } finally {
       setIsSubmitting(false);
     }
@@ -116,8 +143,11 @@ export default function CategoriesScreen() {
 
   const renderCategoryCard = ({ item }: { item: Category }) => {
     return (
-      <View style={{ 
-        backgroundColor: '#FFFFFF', 
+      <TouchableOpacity 
+        activeOpacity={0.8}
+        onPress={() => openEditModal(item)}
+        style={{ 
+          backgroundColor: '#FFFFFF', 
         borderRadius: 16, 
         padding: 16, 
         marginBottom: 16, 
@@ -142,7 +172,7 @@ export default function CategoriesScreen() {
             </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -248,7 +278,7 @@ export default function CategoriesScreen() {
             
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827' }}>
-                Add New Category
+                {editingCategory ? 'Edit Category' : 'Add New Category'}
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={{ width: 32, height: 32, backgroundColor: '#F3F4F6', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
                 <X size={18} color="#6B7280" />
@@ -300,13 +330,40 @@ export default function CategoriesScreen() {
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Add Category</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{editingCategory ? 'Update Category' : 'Add Category'}</Text>
                 )}
               </TouchableOpacity>
             </View>
 
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Custom Alert Modal */}
+      <Modal transparent visible={alertVisible} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.colors.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              {alertTitle.toLowerCase().includes('error') || alertTitle.toLowerCase().includes('failed') ? (
+                <X size={32} color={theme.colors.primary} strokeWidth={2.5} />
+              ) : (
+                <CheckCircle2 size={32} color={theme.colors.primary} strokeWidth={2.5} />
+              )}
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
+              {alertTitle}
+            </Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+              {alertMessage}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setAlertVisible(false)}
+              style={{ width: '100%', height: 50, backgroundColor: theme.colors.primary, borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
 
     </View>

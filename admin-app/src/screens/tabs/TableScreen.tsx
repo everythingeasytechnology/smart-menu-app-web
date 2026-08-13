@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, Platform, KeyboardAvoidingView, Alert, ActivityIndicator, Linking } from 'react-native';
-import { Plus, Users, X, Coffee, Download, RefreshCw, QrCode, CheckCircle2, ChevronDown, LayoutGrid } from 'lucide-react-native';
+import { Plus, Users, X, Coffee, Download, RefreshCw, QrCode, CheckCircle2, ChevronDown, LayoutGrid, Edit2 } from 'lucide-react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, Stack } from 'expo-router';
@@ -40,6 +40,7 @@ export default function TableScreen() {
   const [newCapacity, setNewCapacity] = useState('');
   const [newCategory, setNewCategory] = useState('Dining');
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [editingTable, setEditingTable] = useState<Table | null>(null);
 
   // Modal State for QR Code
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
@@ -102,8 +103,13 @@ export default function TableScreen() {
     
     setIsAddingTable(true);
     try {
-      const response = await fetch(`${dataCenter.apiUrl.replace('/auth', '')}/service-points`, {
-        method: 'POST',
+      const isEdit = editingTable !== null;
+      const url = isEdit 
+        ? `${dataCenter.apiUrl.replace('/auth', '')}/service-points/${editingTable.id}`
+        : `${dataCenter.apiUrl.replace('/auth', '')}/service-points`;
+
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -112,7 +118,8 @@ export default function TableScreen() {
           name: newTitle.trim(),
           seats: parseInt(newCapacity, 10) || 0,
           category: newCategory,
-          point_type: 'table'
+          point_type: 'table',
+          ...(isEdit && { status: editingTable.status, is_active: editingTable.is_active })
         })
       });
       
@@ -122,13 +129,14 @@ export default function TableScreen() {
         setNewTitle('');
         setNewCapacity('');
         setNewCategory('Dining');
+        setEditingTable(null);
         fetchTables(false);
       } else {
-        Alert.alert('Error', data.message || 'Failed to add table');
+        Alert.alert('Error', data.message || `Failed to ${isEdit ? 'update' : 'add'} table`);
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'An error occurred while adding the table');
+      Alert.alert('Error', `An error occurred while ${editingTable ? 'updating' : 'adding'} the table`);
     } finally {
       setIsAddingTable(false);
     }
@@ -137,6 +145,22 @@ export default function TableScreen() {
   const openQrModal = (table: Table) => {
     setSelectedTable(table);
     setQrModalVisible(true);
+  };
+
+  const openEditModal = (table: Table) => {
+    setEditingTable(table);
+    setNewTitle(table.name);
+    setNewCapacity(table.seats.toString());
+    setNewCategory(table.category || 'Dining');
+    setModalVisible(true);
+  };
+
+  const openAddModal = () => {
+    setEditingTable(null);
+    setNewTitle('');
+    setNewCapacity('');
+    setNewCategory('Dining');
+    setModalVisible(true);
   };
 
   const handleDownloadQr = async () => {
@@ -178,6 +202,9 @@ export default function TableScreen() {
           </View>
           
           <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity onPress={() => openEditModal(item)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+              <Edit2 size={14} color="#4B5563" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => openQrModal(item)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
               <QrCode size={14} color="#4B5563" />
             </TouchableOpacity>
@@ -268,9 +295,8 @@ export default function TableScreen() {
         />
       )}
 
-      {/* Floating Add Button */}
       <TouchableOpacity 
-        onPress={() => setModalVisible(true)}
+        onPress={openAddModal}
           style={{ 
                   position: 'absolute', 
                   bottom: '2%',
@@ -299,7 +325,14 @@ export default function TableScreen() {
         >
           <View style={{ backgroundColor: '#FFFFFF', width: '100%', borderRadius: 32, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.25, shadowRadius: 30, elevation: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <Text style={{ fontSize: 24, fontWeight: '900', color: '#111827' }}>Add New Table</Text>
+              <View>
+                <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 4 }}>
+                  {editingTable ? 'Edit Table' : 'Add New Table'}
+                </Text>
+                <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                  {editingTable ? 'Update the details for this table' : 'Create a new table for your restaurant'}
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={{ width: 32, height: 32, backgroundColor: '#F3F4F6', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
                 <X size={20} color="#6B7280" />
               </TouchableOpacity>
@@ -349,7 +382,9 @@ export default function TableScreen() {
                 {isAddingTable ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Add Table</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                    {isAddingTable ? 'Saving...' : (editingTable ? 'Update Table' : 'Create Table')}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>

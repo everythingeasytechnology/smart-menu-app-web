@@ -8,9 +8,14 @@ import { theme } from '../../../constants/theme';
 import { dataCenter } from '../../data/data';
 
 export default function MenuSelectionScreen() {
-  const { id, activeOrderId } = useLocalSearchParams();
+  const { id, activeOrderId, tableData } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  const parsedTable = useMemo(() => {
+    return tableData ? JSON.parse(tableData as string) : null;
+  }, [tableData]);
+  const tableName = parsedTable?.name || `Table ${id}`;
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -217,7 +222,7 @@ export default function MenuSelectionScreen() {
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/table')} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
           <ChevronLeft size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Add Items (Table {id})</Text>
+        <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Add Items</Text>
       </View>
 
       {/* Search Bar */}

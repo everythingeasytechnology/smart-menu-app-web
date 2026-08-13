@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
-import { Plus, Users, X, Edit2, Trash2, ChevronLeft, ChevronDown, Eye, EyeOff, Search, Filter, User, Briefcase } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { Plus, Users, X, Edit2, Trash2, ChevronLeft, ChevronDown, Eye, EyeOff, Search, User, Briefcase, CheckCircle2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { theme } from '../../../constants/theme';
@@ -33,6 +33,17 @@ export default function StaffManagementScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editStaffId, setEditStaffId] = useState<number | null>(null);
+
+  // Custom Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertTitle, setAlertTitle] = useState('');
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
   
   // Form State
   const [name, setName] = useState('');
@@ -101,12 +112,12 @@ export default function StaffManagementScreen() {
   const handleSubmit = async () => {
     const trimmedPassword = password.trim();
     if (!name.trim() || !email.trim() || !phone.trim() || !role.trim()) {
-      Alert.alert('Error', 'Name, email, phone, and role are required');
+      showAlert('Error', 'Name, email, phone, and role are required');
       return;
     }
 
     if (!editStaffId && (!trimmedPassword || trimmedPassword.length < 8)) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
+      showAlert('Error', 'Password must be at least 8 characters long');
       return;
     }
     
@@ -145,13 +156,20 @@ export default function StaffManagementScreen() {
       if (data.success || response.ok) {
         setModalVisible(false);
         fetchStaff(false);
-        Alert.alert('Success', `Staff member ${editStaffId ? 'updated' : 'added'} successfully!`);
+        showAlert('Success', `Staff member ${editStaffId ? 'updated' : 'added'} successfully!`);
       } else {
-        Alert.alert('Error', data.message || `Failed to ${editStaffId ? 'update' : 'add'} staff member`);
+        let errorMessage = data.message || `Failed to ${editStaffId ? 'update' : 'add'} staff member`;
+        if (data.errors) {
+          const firstErrorKey = Object.keys(data.errors)[0];
+          if (firstErrorKey && data.errors[firstErrorKey].length > 0) {
+            errorMessage = data.errors[firstErrorKey][0];
+          }
+        }
+        showAlert('Error', errorMessage);
       }
     } catch (error) {
       console.error('Add staff error:', error);
-      Alert.alert('Error', 'An unexpected error occurred while adding staff.');
+      showAlert('Error', 'An unexpected error occurred while saving staff details.');
     } finally {
       setIsSubmitting(false);
     }
@@ -353,7 +371,7 @@ export default function StaffManagementScreen() {
                   onPress={() => setRoleModalVisible(true)}
                   style={{ backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 16, paddingHorizontal: 16, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                 >
-                  <Text style={{ fontSize: 16, fontWeight: '500', color: '#111827', textTransform: 'capitalize' }}>{role}</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '500', color: '#111827', textTransform: 'capitalize' }}>{role.replace('_', ' ')}</Text>
                   <ChevronDown size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
@@ -445,14 +463,41 @@ export default function StaffManagementScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              onPress={() => { setRole('chef'); setRoleModalVisible(false); }}
-              style={{ backgroundColor: role === 'chef' ? '#FFF5F0' : '#F9FAFB', borderWidth: 1, borderColor: role === 'chef' ? '#F97316' : '#E5E7EB', borderRadius: 12, padding: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}
+              onPress={() => { setRole('kitchen_staff'); setRoleModalVisible(false); }}
+              style={{ backgroundColor: role === 'kitchen_staff' ? '#FFF5F0' : '#F9FAFB', borderWidth: 1, borderColor: role === 'kitchen_staff' ? '#F97316' : '#E5E7EB', borderRadius: 12, padding: 12, marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}
             >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: role === 'chef' ? '#EA580C' : '#1F2937', textTransform: 'capitalize' }}>Chef</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: role === 'kitchen_staff' ? '#EA580C' : '#1F2937', textTransform: 'capitalize' }}>Kitchen Staff</Text>
             </TouchableOpacity>
 
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* Custom Alert Modal */}
+      <Modal transparent visible={alertVisible} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.colors.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              {alertTitle.toLowerCase().includes('error') || alertTitle.toLowerCase().includes('failed') ? (
+                <X size={32} color={theme.colors.primary} strokeWidth={2.5} />
+              ) : (
+                <CheckCircle2 size={32} color={theme.colors.primary} strokeWidth={2.5} />
+              )}
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
+              {alertTitle}
+            </Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+              {alertMessage}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setAlertVisible(false)}
+              style={{ width: '100%', height: 50, backgroundColor: theme.colors.primary, borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
 
     </View>
