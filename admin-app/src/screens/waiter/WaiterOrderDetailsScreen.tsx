@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Platform, ActivityIndicator, Alert, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Plus, Banknote, MoreVertical, Clock, CheckCircle } from 'lucide-react-native';
+import { ChevronLeft, Plus, Banknote, MoreVertical, Clock, CheckCircle, AlertCircle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../constants/theme';
@@ -26,6 +26,7 @@ export default function OrderDetailsScreen() {
   const [order, setOrder] = useState<any>(parsedOrder);
   const [isUpdating, setIsUpdating] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
 
   const updateOrderStatus = async (body: any) => {
     if (!order) return;
@@ -90,6 +91,11 @@ export default function OrderDetailsScreen() {
   };
   
   const handleCancelAction = () => {
+    setCancelModalVisible(true);
+  };
+
+  const confirmCancelOrder = () => {
+    setCancelModalVisible(false);
     updateOrderStatus({ status: 'cancelled' });
   };
 
@@ -153,6 +159,42 @@ export default function OrderDetailsScreen() {
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: theme.colors.primary, alignItems: 'center' }}
               >
                 <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Complete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={cancelModalVisible}
+        onRequestClose={() => setCancelModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <AlertCircle size={32} color="#EF4444" />
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>Cancel Order?</Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 22 }}>
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </Text>
+            
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity 
+                onPress={() => setCancelModalVisible(false)}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' }}
+              >
+                <Text style={{ color: '#4B5563', fontSize: 16, fontWeight: '700' }}>No, keep it</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={confirmCancelOrder}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: '#EF4444', alignItems: 'center' }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Yes, Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Mail, Sparkles, KeyRound } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../../constants/theme';
+import { dataCenter } from '../../data/data';
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
@@ -11,10 +12,40 @@ export default function ForgotPasswordScreen() {
   
   const [email, setEmail] = useState('');
   const [activeInput, setActiveInput] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleNext = () => {
-    // Navigate to OTP or Reset Password
-    router.push('/otp');
+  const handleNext = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${dataCenter.apiUrl}/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        Alert.alert(
+          'Email Sent', 
+          data.message || 'Password reset link sent to your email.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send reset link.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,8 +112,13 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity 
             style={{ height: 58, borderRadius: 29, backgroundColor: theme.colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}
             onPress={handleNext}
+            disabled={isLoading}
           >
-            <Text style={{ color: '#FFF', fontSize: 17, fontWeight: '600' }}>Send Reset Code</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={{ color: '#FFF', fontSize: 17, fontWeight: '600' }}>Send Reset Code</Text>
+            )}
           </TouchableOpacity>
 
           {/* Back to Login */}

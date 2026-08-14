@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { Banknote, MoreVertical } from 'lucide-react-native';
 import { theme } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -149,8 +149,8 @@ export default function OrderDetailsView({
         </View>
 
         {currentStatus !== 'completed' && (
-          (currentStatus === 'pending' || currentStatus === 'confirmed') ? (
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+          (currentStatus === 'pending' || currentStatus === 'confirmed' || currentStatus === 'preparing') ? (
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%', flexWrap: 'wrap' }}>
               <TouchableOpacity 
                 disabled={isUpdating}
                 onPress={handleCancelAction} 
@@ -165,8 +165,22 @@ export default function OrderDetailsView({
                 style={{ flex: 1, paddingVertical: 18, borderRadius: 20, backgroundColor: theme.colors.accent, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
               >
                 {isUpdating && <ActivityIndicator color="#FFFFFF" style={{ marginRight: 8 }} />}
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Accept Order</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>
+                  {currentStatus === 'preparing' ? 'Mark All Ready' : 'Accept Order'}
+                </Text>
               </TouchableOpacity>
+
+              {currentStatus === 'preparing' && onAddItems && (
+                <TouchableOpacity 
+                  disabled={isUpdating}
+                  onPress={onAddItems}
+                  style={{ width: '100%', paddingVertical: 18, borderRadius: 20, backgroundColor: theme.colors.accent, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginTop: 12 }}
+                >
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>
+                    Add Items
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
@@ -177,8 +191,7 @@ export default function OrderDetailsView({
               >
                 {isUpdating && <ActivityIndicator color="#FFFFFF" style={{ marginRight: 8 }} />}
                 <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>
-                  {currentStatus === 'preparing' ? 'Mark All Ready' : 
-                   currentStatus === 'ready' ? 'Mark All Served' : 
+                  {currentStatus === 'ready' ? 'Mark All Served' : 
                    currentStatus === 'served' ? 'Complete Order' : 'Update Status'}
                 </Text>
               </TouchableOpacity>

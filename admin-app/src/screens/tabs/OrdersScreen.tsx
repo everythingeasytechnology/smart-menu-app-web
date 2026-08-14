@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform, Dimensions, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform, Dimensions, ActivityIndicator, Image, Alert, Linking, Modal } from 'react-native';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
+import Constants from 'expo-constants';
 import { theme } from '../../../constants/theme';
-import { Clock, ChefHat, Utensils, MoreVertical, ArrowRight, Filter, ChevronDown, CupSoda, Wallet, ClipboardList, PieChart, CheckCircle2 } from 'lucide-react-native';
+import { Clock, ChefHat, Utensils, MoreVertical, ArrowRight, Filter, ChevronDown, CupSoda, Wallet, ClipboardList, PieChart, CheckCircle2, Sparkles } from 'lucide-react-native';
 import { useExpoPushToken } from '../../hooks/usePushNotifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,8 +13,8 @@ import { RootState } from '../../redux/store';
 const { width } = Dimensions.get('window');
 
 const TABS = [
-  { id: 'pending', label: 'Pending', icon: ClipboardList },
   { id: 'preparing', label: 'Preparing', icon: ChefHat },
+  { id: 'ready', label: 'Ready', icon: CheckCircle2 },
   { id: 'served', label: 'Served', icon: Utensils },
 ];
 
@@ -23,12 +24,49 @@ export default function OrdersScreen() {
   // Initialize Push Notifications
   useExpoPushToken();
 
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('preparing');
   const insets = useSafeAreaInsets();
   
   const token = useSelector((state: RootState) => state.auth.token);
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [versionValidated, setVersionValidated] = useState(false);
+
+  const verifyVersion = async () => {
+    const appVersion = Constants.expoConfig?.version || (Constants.manifest as any)?.version || null;
+    try {
+      const res = await fetch('https://smartmenu.everythingeasy.in/api/v1/app-version');
+      const result = await res.json();
+      
+      if (res.status === 200 && appVersion && result.data?.version) {
+        const requiredVersion = result.data.version;
+        
+        const isVersionOlder = (current: string, required: string) => {
+          const currentParts = current.split('.').map(Number);
+          const requiredParts = required.split('.').map(Number);
+          for (let i = 0; i < Math.max(currentParts.length, requiredParts.length); i++) {
+            const c = currentParts[i] || 0;
+            const r = requiredParts[i] || 0;
+            if (c < r) return true;
+            if (c > r) return false;
+          }
+          return false;
+        };
+
+        if (isVersionOlder(appVersion, requiredVersion)) {
+          setShowUpdateModal(true);
+          setVersionValidated(false);
+          return false;
+        }
+      }
+    } catch (error) {
+      console.error("Version check failed:", error);
+    }
+    setShowUpdateModal(false);
+    setVersionValidated(true);
+    return true;
+  };
 
   const fetchOrders = useCallback(async (showLoader = false) => {
     if (showLoader) setIsLoading(true);
@@ -51,24 +89,37 @@ export default function OrdersScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let interval: NodeJS.Timeout | null = null;
+      
       if (!token) return;
       
-      fetchOrders(true);
+      if (!versionValidated) {
+        verifyVersion();
+        return;
+      }
 
-      const interval = setInterval(() => {
+      // If version is valid, proceed with fetching orders
+      fetchOrders(true);
+      interval = setInterval(() => {
         fetchOrders(false);
       }, 1500);
 
-      return () => clearInterval(interval);
-    }, [token, fetchOrders])
+      return () => {
+        if (interval) clearInterval(interval);
+        setVersionValidated(false);
+      };
+    }, [token, fetchOrders, versionValidated])
   );
 
   const filteredOrders = orders.filter(order => {
-    if (activeTab === 'pending') {
-      return order.order_status === 'pending' || order.order_status === 'confirmed';
-    }
     if (activeTab === 'preparing') {
-      return order.order_status === 'preparing' || order.order_status === 'ready';
+      return order.order_status === 'preparing' || order.order_status === 'pending' || order.order_status === 'confirmed';
+    }
+    if (activeTab === 'ready') {
+      return order.order_status === 'ready';
+    }
+    if (activeTab === 'served') {
+      return order.order_status === 'served';
     }
     return order.order_status === activeTab;
   });
@@ -116,11 +167,14 @@ export default function OrdersScreen() {
         <View style={{ flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
           {TABS.map(tab => {
             const count = orders.filter(o => {
-              if (tab.id === 'pending') {
-                return o.order_status === 'pending' || o.order_status === 'confirmed';
-              }
               if (tab.id === 'preparing') {
-                return o.order_status === 'preparing' || o.order_status === 'ready';
+                return o.order_status === 'preparing' || o.order_status === 'pending' || o.order_status === 'confirmed';
+              }
+              if (tab.id === 'ready') {
+                return o.order_status === 'ready';
+              }
+              if (tab.id === 'served') {
+                return o.order_status === 'served';
               }
               return o.order_status === tab.id;
             }).length;
@@ -233,6 +287,7 @@ export default function OrdersScreen() {
                             </View>
                           )}
                         </View>
+                       
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Clock size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
                           <Text style={{ fontSize: 12, color: '#9CA3AF', fontWeight: '500' }}>
@@ -325,6 +380,30 @@ export default function OrdersScreen() {
           )}
         </ScrollView>
       )}
+
+      {/* Custom Update Modal */}
+      <Modal visible={showUpdateModal} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 }}>
+            <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+              <Sparkles size={36} color="#EA580C" />
+            </View>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 12 }}>Update Available</Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 32, lineHeight: 22 }}>
+              A new version of the app is available. Please update to the latest version for the best experience.
+            </Text>
+            <TouchableOpacity 
+              style={{ backgroundColor: '#EA580C', width: '100%', paddingVertical: 18, borderRadius: 16, alignItems: 'center' }}
+              onPress={() => {
+                Linking.openURL("https://play.google.com/store/apps/details?id=com.everythingeasy.smartmenu");
+                verifyVersion();
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Update Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Floating Action Button for History */}
       <TouchableOpacity 

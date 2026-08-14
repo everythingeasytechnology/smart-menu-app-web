@@ -128,9 +128,11 @@ const throttledsearch = throttle((email)=>{
 
           {/* Illustration Area */}
           <View style={{ alignItems: 'center', marginBottom: 30, height: 160, justifyContent: 'center' }}>
-            <View style={{ width: 120, height: 120, backgroundColor: theme.colors.accent + '15', borderRadius: 60, justifyContent: 'center', alignItems: 'center' }}>
-              <UtensilsCrossed size={60} color={theme.colors.accent} strokeWidth={1.5} />
-            </View>
+            <Image 
+              source={require('../../../assets/images/splash.png')}
+              style={{ width: 160, height: 160 }}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Welcome Text */}
