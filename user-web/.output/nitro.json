@@ -1,6 +1,6 @@
 {
-  "date": "2026-08-14T13:32:59.468Z",
-  "preset": "cloudflare-module",
+  "date": "2026-08-14T13:38:47.516Z",
+  "preset": "nitro-prerender",
   "framework": {
     "name": "nitro",
     "version": "3.0.260603-beta"
@@ -8,16 +8,10 @@
   "versions": {
     "nitro": "3.0.260603-beta"
   },
-  "serverEntry": "server/index.mjs",
+  "serverEntry": "../node_modules/.nitro/prerender/index.mjs",
   "publicDir": "public",
   "commands": {
-    "preview": "npx wrangler --cwd ./ dev",
-    "deploy": "npx wrangler --cwd ./ deploy"
+    "preview": "npx serve ./public"
   },
-  "config": {
-    "cloudflare": {
-      "deployConfig": true,
-      "nodeCompat": true
-    }
-  }
+  "config": {}
 }

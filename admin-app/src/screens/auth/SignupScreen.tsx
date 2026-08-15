@@ -163,7 +163,7 @@ export default function SignupScreen() {
           body: JSON.stringify({ email })
         });
         const data = await res.json();
-        console.log(data);
+        console.log(data, 'email');
         
         if (data.success && data.data?.otp) {
           setExpectedOtp(data.data.otp);
