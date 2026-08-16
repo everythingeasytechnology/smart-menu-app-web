@@ -68,11 +68,15 @@ export default function ProfileScreen() {
           marginBottom: 24
         }}>
           <View style={{ marginRight: 16 }}>
-            <View style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: '#E5E7EB', overflow: 'hidden' }}>
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop' }} 
-                style={{ width: '100%', height: '100%' }} 
-              />
+            <View style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: '#E5E7EB', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }}>
+              {user?.profile_image_url ? (
+                <Image 
+                  source={{ uri: user.profile_image_url }} 
+                  style={{ width: '100%', height: '100%' }} 
+                />
+              ) : (
+                <User size={40} color="#9CA3AF" />
+              )}
             </View>
 
           </View>

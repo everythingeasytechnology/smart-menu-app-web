@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, Modal } from 'react-native';
 import { Banknote, MoreVertical } from 'lucide-react-native';
 import { theme } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ export default function OrderDetailsView({
   onAddItems
 }: OrderDetailsViewProps) {
   const insets = useSafeAreaInsets();
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
@@ -64,12 +65,21 @@ export default function OrderDetailsView({
 
               {currentStatus === 'completed' ? null : item.status !== 'cancelled' ? (
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity 
-                    disabled={isPreparingCurrent || isUpdating}
-                    onPress={() => updateOrderStatus({ items: [{ id: item.id, status: 'preparing' }] })}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: isPreparingCurrent ? '#F3F4F6' : '#FEF3C7' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: isPreparingCurrent ? '#9CA3AF' : '#D97706' }}>Preparing</Text>
-                  </TouchableOpacity>
+                  {isPreparingCurrent ? (
+                    <TouchableOpacity 
+                      disabled={isUpdating}
+                      onPress={() => updateOrderStatus({ items: [{ id: item.id, status: 'cancelled' }] })}
+                      style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#FEE2E2' }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444' }}>Cancel</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      disabled={isUpdating}
+                      onPress={() => updateOrderStatus({ items: [{ id: item.id, status: 'preparing' }] })}
+                      style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#FEF3C7' }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#D97706' }}>Preparing</Text>
+                    </TouchableOpacity>
+                  )}
                   
                   <TouchableOpacity 
                     disabled={isReadyCurrent || isUpdating}
@@ -86,8 +96,16 @@ export default function OrderDetailsView({
                   </TouchableOpacity>
                 </View>
               ) : (
-                 <View style={{ paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#FEE2E2' }}>
-                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444' }}>Cancelled</Text>
+                 <View style={{ flexDirection: 'row', gap: 8 }}>
+                   <View style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#FEE2E2' }}>
+                     <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444' }}>Cancelled</Text>
+                   </View>
+                   <TouchableOpacity 
+                     disabled={isUpdating}
+                     onPress={() => updateOrderStatus({ items: [{ id: item.id, status: 'preparing' }] })}
+                     style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', backgroundColor: '#DCFCE7' }}>
+                     <Text style={{ fontSize: 13, fontWeight: '700', color: '#16A34A' }}>Accept</Text>
+                   </TouchableOpacity>
                  </View>
               )}
             </View>
@@ -156,7 +174,7 @@ export default function OrderDetailsView({
                 onPress={handleCancelAction} 
                 style={{ flex: 1, paddingVertical: 18, borderRadius: 20, backgroundColor: theme.colors.accent + '15', alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.accent }}>Cancel</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.accent }}>Cancel Order</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -186,7 +204,13 @@ export default function OrderDetailsView({
             <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
               <TouchableOpacity 
                 disabled={isUpdating}
-                onPress={handleAction} 
+                onPress={() => {
+                  if (currentStatus === 'served') {
+                    setShowCompleteModal(true);
+                  } else {
+                    handleAction();
+                  }
+                }} 
                 style={{ flex: 1, paddingVertical: 18, borderRadius: 20, backgroundColor: currentStatus === 'served' ? '#10B981' : theme.colors.accent, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
               >
                 {isUpdating && <ActivityIndicator color="#FFFFFF" style={{ marginRight: 8 }} />}
@@ -219,6 +243,39 @@ export default function OrderDetailsView({
           <Text style={{ marginTop: 12, fontSize: 16, fontWeight: '600', color: theme.colors.primary }}>Updating...</Text>
         </View>
       )}
+
+      {/* Confirmation Modal */}
+      <Modal visible={showCompleteModal} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.colors.accent + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+              <Banknote color={theme.colors.accent} size={32} />
+            </View>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 12, textAlign: 'center' }}>Complete Order?</Text>
+            <Text style={{ fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 32, lineHeight: 22 }}>
+              Are you sure you want to mark this order as completed? Please ensure the payment of ₹{order.total} has been collected.
+            </Text>
+            
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity 
+                onPress={() => setShowCompleteModal(false)}
+                style={{ flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#4B5563' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => {
+                  setShowCompleteModal(false);
+                  handleAction();
+                }}
+                style={{ flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: theme.colors.accent, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Yes, Complete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

@@ -201,8 +201,8 @@ export default function TableScreen() {
           </View>
           
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            <TouchableOpacity onPress={() => openQrModal(item)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
-              <QrCode size={14} color="#4B5563" />
+            <TouchableOpacity onPress={() => openQrModal(item)} style={{ width: 38, height: 38, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+              <QrCode size={20} color="#4B5563" />
             </TouchableOpacity>
           </View>
         </View>

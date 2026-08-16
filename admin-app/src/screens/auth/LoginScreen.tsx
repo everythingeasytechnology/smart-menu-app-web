@@ -12,8 +12,8 @@ import { dataCenter } from '../../data/data';
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState('b@gmail.com');
-  const [password, setPassword] = useState('12345678');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [activeInput, setActiveInput] = useState<'email' | 'password' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,8 +122,8 @@ const throttledsearch = throttle((email)=>{
           
           {/* Header Logo */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-            <Sparkles size={24} color="#000" fill="#000" style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Food Menu</Text>
+   
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Smart Menu</Text>
           </View>
 
           {/* Illustration Area */}
@@ -137,10 +137,7 @@ const throttledsearch = throttle((email)=>{
 
           {/* Welcome Text */}
           <View style={{ alignItems: 'center', marginBottom: 28 }}>
-            <Text style={{ fontSize: 34, fontWeight: '800', color: '#111827', marginBottom: 12 }}>Welcome Back</Text>
-            <Text style={{ fontSize: 15, color: '#6B7280' }}>
-              Don't have an account? <Text style={{ color: theme.colors.accent, fontWeight: '600' }} onPress={() => router.push('/signup')}>Sign up</Text>
-            </Text>
+            <Text style={{ fontSize: 34, fontWeight: '800', color: '#111827' }}>Welcome Back</Text>
           </View>
 
           {/* Email Input */}
@@ -221,9 +218,15 @@ const throttledsearch = throttle((email)=>{
           </TouchableOpacity>
 
           {/* Forgot Password */}
-          <TouchableOpacity style={{ alignItems: 'center', marginBottom: 36 }} onPress={() => router.push('/forgot-password')}>
+          <TouchableOpacity style={{ alignItems: 'center', marginBottom: 24 }} onPress={() => router.push('/forgot-password')}>
             <Text style={{ color: theme.colors.accent, fontSize: 15, fontWeight: '500' }}>Forgot your password?</Text>
           </TouchableOpacity>
+
+          <View style={{ alignItems: 'center', marginBottom: 36 }}>
+            <Text style={{ fontSize: 15, color: '#6B7280' }}>
+              Don't have an account? <Text style={{ color: theme.colors.accent, fontWeight: '600' }} onPress={() => router.push('/signup')}>Sign up</Text>
+            </Text>
+          </View>
 
        
 

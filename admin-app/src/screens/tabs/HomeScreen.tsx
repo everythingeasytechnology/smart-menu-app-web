@@ -348,7 +348,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            {dashboardData.recent_orders?.slice(0, 3).map((order: any, index: number) => {
+            {dashboardData.recent_orders?.filter((order: any) => order.status !== 'cancelled').slice(0, 3).map((order: any, index: number) => {
               // Map status to nice colors
               let bg = '#FFF3E0';
               let color = '#FF9800';

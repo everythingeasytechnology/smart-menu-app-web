@@ -57,11 +57,10 @@ export default function ForgotPasswordScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: Math.max(insets.top + 10, 20), paddingBottom: Math.max(insets.bottom + 20, 36) }} showsVerticalScrollIndicator={false}>
           
           {/* Header Logo */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-            <Sparkles size={24} color="#000" fill="#000" style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Food Menu</Text>
+           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+   
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Smart Menu</Text>
           </View>
-
           {/* Illustration Area */}
           <View style={{ alignItems: 'center', marginBottom: 30, height: 160, justifyContent: 'center' }}>
             <View style={{ width: 120, height: 120, backgroundColor: theme.colors.accent + '15', borderRadius: 60, justifyContent: 'center', alignItems: 'center' }}>

@@ -43,7 +43,7 @@ export default function TableOrdersScreen() {
           const data = await response.json();
           if (isActive && data.success) {
             const allOrders = data.data || [];
-            setOrders(allOrders.filter((o: any) => o.order_status !== 'completed'));
+            setOrders(allOrders.filter((o: any) => o.order_status !== 'completed' && o.order_status !== 'cancelled'));
           }
         } catch (error) {
           console.error("Failed to fetch orders:", error);
@@ -79,12 +79,14 @@ export default function TableOrdersScreen() {
         body: JSON.stringify(body)
       });
       const data = await response.json();
-      if (data.success && data.data) {
+      if (data.success) {
         setOrders(prev => {
           const newOrders = [...prev];
           const idx = newOrders.findIndex(o => o.id === orderId);
-          if (idx !== -1) newOrders[idx] = data.data;
-          return newOrders;
+          if (idx !== -1) {
+            newOrders[idx] = data.data || { ...newOrders[idx], order_status: body.status };
+          }
+          return newOrders.filter(o => o.order_status !== 'completed' && o.order_status !== 'cancelled');
         });
       } else {
         alert(data.message || 'Failed to update status');
