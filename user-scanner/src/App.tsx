@@ -7,6 +7,7 @@ import { TableLayout } from "./layouts/TableLayout";
 import { MenuPage } from "./pages/MenuPage";
 import { CartPage } from "./pages/CartPage";
 import { CouponsPage } from "./pages/CouponsPage";
+import { LandingPage } from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route element={<RootLayout />}>
             <Route path="/:tableId" element={<TableLayout />}>
               <Route index element={<MenuPage />} />
